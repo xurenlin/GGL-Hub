@@ -1,0 +1,470 @@
+version: '3.8'
+
+services:
+  # Nacos 注册中心 & 配置中心
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: ggl-nacos
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=123456
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+      - NACOS_AUTH_IDENTITY_KEY=serverIdentity
+      - NACOS_AUTH_IDENTITY_VALUE=security
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - nacos_logs:/home/nacos/logs
+      - nacos_data:/home/nacos/data
+    networks:
+      - ggl-network
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: ggl-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=nacos
+      - TZ=Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max_connections=1000
+      - --init-file=/docker-entrypoint-initdb.d/init-all.sh
+    networks:
+      - ggl-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis 缓存
+  redis:
+    image: redis:7.0-alpine
+    container_name: ggl-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass 123456
+    networks:
+      - ggl-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RedisInsight (Redis 管理界面)
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: ggl-redisinsight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/db
+    networks:
+      - ggl-network
+    restart: unless-stopped
+
+  # Nginx 反向代理 (可选)
+  nginx:
+    image: nginx:alpine
+    container_name: ggl-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/html:/usr/share/nginx/html
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+    restart: unless-stopped
+
+  # Portainer (Docker 管理界面)
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: ggl-portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - ggl-network
+    restart: unless-stopped
+
+  # Prometheus (监控)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ggl-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - ggl-network
+    restart: unless-stopped
+
+  # Grafana (监控面板)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ggl-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - ggl-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Jaeger (分布式追踪)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: ggl-jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - ggl-network
+    restart: unless-stopped
+
+  # MinIO (对象存储)
+  minio:
+    image: minio/minio:latest
+    container_name: ggl-minio
+    ports:
+      - "9002:9000" # API 端口改为 9002
+      - "9003:9001" # Console 端口改为 9003
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - ggl-network
+    restart: unless-stopped
+
+  # Elasticsearch (日志存储)
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: ggl-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - ggl-network
+    restart: unless-stopped
+
+  # Logstash (日志收集)
+  logstash:
+    image: logstash:8.12.0
+    container_name: ggl-logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/config:/usr/share/logstash/config
+    ports:
+      - "5000:5000"
+    networks:
+      - ggl-network
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  # Kibana (日志可视化)
+  kibana:
+    image: kibana:8.12.0
+    container_name: ggl-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - ggl-network
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  # ========== GGL-Hub Java 微服务 ==========
+
+  # 网关服务
+  ggl-gateway:
+    build:
+      context: ./ggl-gateway
+      dockerfile: Dockerfile
+    container_name: ggl-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # AI编排网关服务
+  ggl-ai-gateway:
+    build:
+      context: ./ggl-ai-gateway
+      dockerfile: Dockerfile
+    container_name: ggl-ai-gateway
+    ports:
+      - "8086:8086"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-your-anthropic-api-key}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-your-azure-openai-endpoint}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-your-azure-openai-api-key}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME:-your-deployment-name}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
+      - OLLAMA_MODEL_NAME=${OLLAMA_MODEL_NAME:-llama2}
+      - HUGGING_FACE_API_KEY=${HUGGING_FACE_API_KEY:-your-hugging-face-api-key}
+      - HUGGING_FACE_MODEL_ID=${HUGGING_FACE_MODEL_ID:-your-model-id}
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8086/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 订单服务
+  ggl-service-order:
+    build:
+      context: ./ggl-service-order
+      dockerfile: Dockerfile
+    container_name: ggl-service-order
+    ports:
+      - "8081:8081"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=123456
+      - MYSQL_DATABASE=ggl_order
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 地理信息服务
+  ggl-service-geo:
+    build:
+      context: ./ggl-service-geo
+      dockerfile: Dockerfile
+    container_name: ggl-service-geo
+    ports:
+      - "8082:8082"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 国际化服务
+  ggl-service-i18n:
+    build:
+      context: ./ggl-service-i18n
+      dockerfile: Dockerfile
+    container_name: ggl-service-i18n
+    ports:
+      - "8083:8083"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8083/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 知识检索服务
+  ggl-service-rag:
+    build:
+      context: ./ggl-service-rag
+      dockerfile: Dockerfile
+    container_name: ggl-service-rag
+    ports:
+      - "8084:8084"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    volumes:
+      - rag_data:/app/data
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # AI安全防护服务
+  ggl-service-guardrail:
+    build:
+      context: ./ggl-service-guardrail
+      dockerfile: Dockerfile
+    container_name: ggl-service-guardrail
+    ports:
+      - "8085:8085"
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - TZ=Asia/Shanghai
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    networks:
+      - ggl-network
+    depends_on:
+      - nacos
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8085/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  nacos_logs:
+  nacos_data:
+  mysql_data:
+  redis_data:
+  redisinsight_data:
+  portainer_data:
+  prometheus_data:
+  grafana_data:
+  minio_data:
+  elasticsearch_data:
+  rag_data:
+
+
+networks:
+  ggl-network:
+    driver: bridge
+    name: ggl-network

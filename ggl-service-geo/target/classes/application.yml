@@ -1,0 +1,106 @@
+# 服务配置
+spring:
+  # Redis 配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 2
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # Nacos 服务发现
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        register-enabled: true
+        ip: ${GEO_SERVICE_IP:}
+        port: ${server.port}
+        weight: 1.0
+        metadata:
+          version: 1.0.0
+          zone: ${ZONE:default}
+
+# 地理信息服务配置
+ggl:
+  service:
+    geo:
+      # 坐标系统配置
+      coordinate:
+        # 支持的坐标系
+        supported-systems: WGS84,GCJ02,BD09
+        # 默认坐标系
+        default-system: WGS84
+        # 坐标转换精度（米）
+        conversion-precision: 0.1
+      
+      # 路径规划配置
+      routing:
+        # 默认算法
+        default-algorithm: A_STAR
+        # 支持的算法
+        supported-algorithms: A_STAR,DIJKSTRA,BFS
+        # 最大路径长度（公里）
+        max-route-length: 1000
+        # 缓存时间（秒）
+        cache-ttl: 3600
+      
+      # 地理编码配置
+      geocoding:
+        # 默认提供商
+        default-provider: GOOGLE
+        # 支持的提供商
+        supported-providers: GOOGLE,BING,AMAP,BAIDU
+        # 缓存时间（秒）
+        cache-ttl: 86400
+        # 批量处理大小
+        batch-size: 10
+      
+      # 地图服务配置
+      map:
+        # 地图瓦片服务
+        tile-service: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+        # 默认缩放级别
+        default-zoom: 12
+        # 最大缩放级别
+        max-zoom: 18
+        # 最小缩放级别
+        min-zoom: 1
+
+# Knife4j 配置
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+    enable-swagger-models: true
+    enable-document-manage: true
+    enable-version: true
+    enable-author: true
+    enable-request-cache: true
+    enable-filter-multipart-api-method-type: POST
+    enable-filter-multipart-apis: false
+    enable-request-params: true
+    enable-response-params: true
+    enable-host: true
+    enable-host-text: http://localhost:${server.port}
+    enable-footer: true
+    enable-footer-custom: true
+    footer-custom-content: GGL-Hub 地理信息微服务 API 文档
+    enable-search: true
+    enable-open-api: true
+    enable-group: true
+
+# 日志配置
+logging:
+  level:
+    com.ggl.geo: debug
+    org.springframework.web: info

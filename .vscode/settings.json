@@ -1,0 +1,19 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.home": "H:\\software\\java17",
+    "java.jdt.ls.java.home": "H:\\software\\java17",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "H:\\software\\java17",
+            "default": true
+        }
+    ],
+    "maven.terminal.customEnv": [
+        {
+            "environmentVariable": "JAVA_HOME",
+            "value": "H:\\software\\java17"
+        }
+    ],
+    "maven.executable.options": "-Djava.home=H:\\software\\java17"
+}

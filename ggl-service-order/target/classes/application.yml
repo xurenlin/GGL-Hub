@@ -1,0 +1,115 @@
+# 服务配置
+spring:
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:ggl_order}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # Redis 配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 1
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # MyBatis Plus 配置
+  mybatis-plus:
+    mapper-locations: classpath*:/mapper/**/*.xml
+    type-aliases-package: com.ggl.order.entity
+    configuration:
+      map-underscore-to-camel-case: true
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    global-config:
+      db-config:
+        id-type: auto
+        logic-delete-field: deleted
+        logic-delete-value: 1
+        logic-not-delete-value: 0
+
+  # Nacos 服务发现
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        register-enabled: true
+        ip: ${ORDER_SERVICE_IP:}
+        port: ${server.port}
+        weight: 1.0
+        metadata:
+          version: 1.0.0
+          zone: ${ZONE:default}
+
+# MyBatis Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 订单服务配置
+ggl:
+  service:
+    order:
+      # 订单配置
+      order:
+        max-items: 100
+        default-currency: USD
+        supported-currencies: USD,EUR,GBP,CNY,JPY
+      
+      # 物流配置
+      logistics:
+        default-carrier: DHL
+        supported-carriers: DHL,FedEx,UPS,EMS,SF
+        tracking-url-pattern: https://tracking.example.com/{trackingNumber}
+      
+      # 通知配置
+      notification:
+        enabled: true
+        email-template: order_notification
+        sms-template: order_sms_notification
+
+# Knife4j 配置
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+    enable-swagger-models: true
+    enable-document-manage: true
+    enable-version: true
+    enable-author: true
+    enable-request-cache: true
+    enable-filter-multipart-api-method-type: POST
+    enable-filter-multipart-apis: false
+    enable-request-params: true
+    enable-response-params: true
+    enable-host: true
+    enable-host-text: http://localhost:${server.port}
+    enable-footer: true
+    enable-footer-custom: true
+    footer-custom-content: GGL-Hub 订单微服务 API 文档
+    enable-search: true
+    enable-open-api: true
+    enable-group: true
+
+# 日志配置
+logging:
+  level:
+    com.ggl.order: debug
+    org.springframework.web: info
+    org.mybatis: debug

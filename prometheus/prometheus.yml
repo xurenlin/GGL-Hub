@@ -1,0 +1,108 @@
+# Prometheus 配置文件
+# GGL-Hub 企业级全球化智能物流调度平台
+
+global:
+  scrape_interval: 15s          # 抓取间隔
+  evaluation_interval: 15s      # 规则评估间隔
+  external_labels:
+    monitor: 'ggl-hub-monitor'
+
+# Alertmanager 配置 (可选)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# 规则文件 (可选)
+# rule_files:
+#   - "rules/*.yml"
+
+# 抓取配置
+scrape_configs:
+  # Prometheus 自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'prometheus'
+
+  # Nacos 服务监控
+  - job_name: 'nacos'
+    metrics_path: '/nacos/actuator/prometheus'
+    static_configs:
+      - targets: ['nacos:8848']
+        labels:
+          application: 'nacos'
+
+  # GGL Gateway 网关服务
+  - job_name: 'ggl-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-gateway:8080']
+        labels:
+          application: 'ggl-gateway'
+
+  # GGL Order 订单服务
+  - job_name: 'ggl-order'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-order:8081']
+        labels:
+          application: 'ggl-order'
+
+  # GGL Geo 地理服务
+  - job_name: 'ggl-geo'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-geo:8082']
+        labels:
+          application: 'ggl-geo'
+
+  # GGL I18n 国际化服务
+  - job_name: 'ggl-i18n'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-i18n:8083']
+        labels:
+          application: 'ggl-i18n'
+
+  # GGL RAG 服务
+  - job_name: 'ggl-rag'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-rag:8084']
+        labels:
+          application: 'ggl-rag'
+
+  # GGL Guardrail 护栏服务
+  - job_name: 'ggl-guardrail'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-guardrail:8085']
+        labels:
+          application: 'ggl-guardrail'
+
+  # GGL AI Gateway AI网关服务
+  - job_name: 'ggl-ai-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ggl-ai-gateway:8086']
+        labels:
+          application: 'ggl-ai-gateway'
+
+  # Redis 监控 (需要 redis_exporter)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # MySQL 监控 (需要 mysqld_exporter)
+  # - job_name: 'mysql'
+  #   static_configs:
+  #     - targets: ['mysql-exporter:9104']
+
+  # Elasticsearch 监控
+  # - job_name: 'elasticsearch'
+  #   static_configs:
+  #     - targets: ['elasticsearch:9200']
+  #   metrics_path: '/_prometheus/metrics'

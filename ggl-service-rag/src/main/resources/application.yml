@@ -1,0 +1,152 @@
+# 服务配置
+spring:
+  # Redis 配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 4
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # Nacos 服务发现
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        register-enabled: true
+        ip: ${RAG_SERVICE_IP:}
+        port: ${server.port}
+        weight: 1.0
+        metadata:
+          version: 1.0.0
+          zone: ${ZONE:default}
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      enabled: true
+
+# 知识检索服务配置
+ggl:
+  service:
+    rag:
+      # 向量存储配置
+      vector-store:
+        # 存储类型
+        type: REDIS
+        # 支持的存储类型
+        supported-types: REDIS,IN_MEMORY,CHROMA
+        # 向量维度
+        dimension: 1536
+        # 相似度阈值
+        similarity-threshold: 0.7
+        # 最大检索结果数
+        max-results: 10
+      
+      # 文档处理配置
+      document:
+        # 支持的文件类型
+        supported-formats: PDF,TXT,DOC,DOCX,PPT,PPTX,XLS,XLSX,MD,HTML
+        # 最大文件大小（MB）
+        max-file-size: 50
+        # 文本分块大小
+        chunk-size: 1000
+        # 文本分块重叠
+        chunk-overlap: 200
+        # 默认编码
+        default-encoding: UTF-8
+      
+      # 嵌入模型配置
+      embedding:
+        # 默认模型
+        default-model: TEXT_EMBEDDING_ADA_002
+        # 支持的模型
+        supported-models: TEXT_EMBEDDING_ADA_002,TEXT_EMBEDDING_3_SMALL,TEXT_EMBEDDING_3_LARGE
+        # 缓存时间（秒）
+        cache-ttl: 86400
+        # 批量处理大小
+        batch-size: 32
+      
+      # 检索配置
+      retrieval:
+        # 默认检索模式
+        default-mode: HYBRID
+        # 支持的检索模式
+        supported-modes: KEYWORD,SEMANTIC,HYBRID
+        # 关键词权重
+        keyword-weight: 0.3
+        # 语义权重
+        semantic-weight: 0.7
+        # 最大上下文长度
+        max-context-length: 4000
+      
+      # 知识库配置
+      knowledge-base:
+        # 默认知识库
+        default-base: logistics
+        # 支持的知识库
+        supported-bases: logistics,customers,products,faq
+        # 自动同步
+        auto-sync: true
+        # 同步间隔（秒）
+        sync-interval: 3600
+
+# LangChain4j 配置
+langchain4j:
+  open-ai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    timeout: 60s
+    log-requests: true
+    log-responses: true
+  embedding:
+    model: text-embedding-ada-002
+    dimensions: 1536
+  vector-store:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 4
+      index-name: rag_vector_index
+
+# Knife4j 配置
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN
+    enable-swagger-models: true
+    enable-document-manage: true
+    enable-version: true
+    enable-author: true
+    enable-request-cache: true
+    enable-filter-multipart-api-method-type: POST
+    enable-filter-multipart-apis: false
+    enable-request-params: true
+    enable-response-params: true
+    enable-host: true
+    enable-host-text: http://localhost:${server.port}
+    enable-footer: true
+    enable-footer-custom: true
+    footer-custom-content: GGL-Hub 知识检索服务 API 文档
+    enable-search: true
+    enable-open-api: true
+    enable-group: true
+
+# 日志配置
+logging:
+  level:
+    com.ggl.rag: debug
+    dev.langchain4j: info
+    org.springframework.web: info
