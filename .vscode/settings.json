@@ -5,14 +5,14 @@
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-17",
-            "path": "H:\\software\\java17",
+            "path": "E:\\soft\\Java17",
             "default": true
         }
     ],
     "maven.terminal.customEnv": [
         {
             "environmentVariable": "JAVA_HOME",
-            "value": "H:\\software\\java17"
+            "value": "E:\\soft\\Java17"
         }
     ],
     "maven.executable.options": "-Djava.home=H:\\software\\java17"

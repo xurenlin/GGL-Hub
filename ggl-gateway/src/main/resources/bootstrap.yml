@@ -4,6 +4,11 @@ spring:
     name: ggl-gateway
   profiles:
     active: dev
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml?refreshEnabled=true
+      - optional:nacos:common.yaml?group=DEFAULT_GROUP&refreshEnabled=true
+      - optional:nacos:gateway.yaml?group=DEFAULT_GROUP&refreshEnabled=true
 
   # Nacos 配置中心
   cloud:
