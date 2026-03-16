@@ -16,8 +16,8 @@ spring:
             - StripPrefix=1
             - name: RequestRateLimiter
               args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
+                '[redis-rate-limiter.replenishRate]': 10
+                '[redis-rate-limiter.burstCapacity]': 20
                 key-resolver: "#{@userKeyResolver}"
 
         # 地理信息服务路由
@@ -70,7 +70,6 @@ spring:
 
       # 全局过滤器
       default-filters:
-        - AddRequestHeader=X-Gateway-Request-Time, ${spring.cloud.gateway.metrics.tags.request-time:}
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
 
     # Nacos 服务发现
@@ -79,6 +78,8 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
         namespace: ${NACOS_NAMESPACE:}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: nacos
+        password: nacos
         register-enabled: true
         ip: ${GATEWAY_IP:}
         port: ${server.port}
@@ -92,7 +93,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:123456}
       database: 0
       timeout: 3000ms
       lettuce:

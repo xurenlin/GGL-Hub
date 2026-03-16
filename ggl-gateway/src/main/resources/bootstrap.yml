@@ -20,13 +20,6 @@ spring:
         file-extension: yaml
         prefix: ${spring.application.name}
         refresh-enabled: true
-        shared-configs:
-          - data-id: common.yaml
-            group: DEFAULT_GROUP
-            refresh: true
-          - data-id: gateway.yaml
-            group: DEFAULT_GROUP
-            refresh: true
 
   # 日志配置
   logging:

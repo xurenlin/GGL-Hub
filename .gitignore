@@ -308,3 +308,5 @@ hs_err_pid*
 # Ignore system files
 **/Thumbs.db
 **/.DS_Store
+.vscode/settings.json
+

@@ -5,22 +5,26 @@
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-17",
-            "path": "E:\\soft\\Java17",
+            "path": "H:\\software\\Java17",
             "default": true
         }
     ],
     "maven.terminal.customEnv": [
         {
             "environmentVariable": "JAVA_HOME",
-            "value": "E:\\soft\\Java17"
+            "value": "H:\\software\\Java17"
         }
     ],
     "maven.executable.options": "-Djava.home=H:\\software\\java17",
     "git.enabled": true,
-    "git.path": "E:\\soft\\Git\\bin\\git.exe", // 注意：这个路径不对！需要修正
+    "git.path": "C:\\Program Files\\Git\\bin\\git.exe",
     "terminal.integrated.env.windows": {
         "PATH": "${env:PATH};C:\\Program Files\\Git\\bin;C:\\Program Files\\Git\\cmd"
     },
     "git.autofetch": true,
-    "git.confirmSync": false
+    "git.confirmSync": false,
+    "spring-boot.ls.java.vmargs": "-Dcom.sun.management.jmxremote=false",
+    "spring.dashboard.openWith": "integrated-terminal",
+    "spring-boot.ls.enableJmxAutoConnect": false,
+    "java.debug.settings.vmArgs": "-Dcom.sun.management.jmxremote=false -Dcom.sun.management.jmxremote.port=0"
 }

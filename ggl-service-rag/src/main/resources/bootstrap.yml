@@ -26,9 +26,17 @@ spring:
           max-idle: 8
           min-idle: 0
 
-  # Nacos 配置中心
+  # Nacos 配置中心和服务发现
   cloud:
     nacos:
+      # Nacos 通用认证配置
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        register-enabled: false
       config:
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
         namespace: ${NACOS_NAMESPACE:}
@@ -36,19 +44,6 @@ spring:
         file-extension: yaml
         prefix: ${spring.application.name}
         refresh-enabled: true
-        # Nacos 认证配置
-        username: nacos
-        password: nacos
-        shared-configs:
-          - data-id: common.yaml
-            group: DEFAULT_GROUP
-            refresh: true
-          - data-id: redis.yaml
-            group: DEFAULT_GROUP
-            refresh: true
-          - data-id: ai.yaml
-            group: DEFAULT_GROUP
-            refresh: true
 
   # 日志配置
   logging:

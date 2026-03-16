@@ -1,7 +1,147 @@
-@echo off
-REM 设置项目使用 Java 17
-set JAVA_HOME=H:\software\java17
-set PATH=%JAVA_HOME%\bin;%PATH%
+# Spring Cloud Gateway 配置
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # 订单服务路由
+        - id: ggl-service-order
+          uri: lb://ggl-service-order
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "userKeyResolver"
 
-REM 执行 Maven 命令
-call mvn %*
+        # 地理信息服务路由
+        - id: ggl-service-geo
+          uri: lb://ggl-service-geo
+          predicates:
+            - Path=/api/geo/**
+          filters:
+            - StripPrefix=1
+
+        # 国际化服务路由
+        - id: ggl-service-i18n
+          uri: lb://ggl-service-i18n
+          predicates:
+            - Path=/api/i18n/**
+          filters:
+            - StripPrefix=1
+
+        # 知识检索服务路由
+        - id: ggl-service-rag
+          uri: lb://ggl-service-rag
+          predicates:
+            - Path=/api/rag/**
+          filters:
+            - StripPrefix=1
+
+        # AI安全防护服务路由
+        - id: ggl-service-guardrail
+          uri: lb://ggl-service-guardrail
+          predicates:
+            - Path=/api/guardrail/**
+          filters:
+            - StripPrefix=1
+
+        # AI编排网关服务路由
+        - id: ggl-ai-gateway
+          uri: lb://ggl-ai-gateway
+          predicates:
+            - Path=/api/ai/**
+          filters:
+            - StripPrefix=1
+
+        # 文档路由
+        - id: ggl-service-docs
+          uri: lb://ggl-service-order
+          predicates:
+            - Path=/v3/api-docs/**
+          filters:
+            - RewritePath=/v3/api-docs/(?<path>.*), /$\{path}/v3/api-docs
+
+      # 全局过滤器
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
+    # Nacos 服务发现
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: nacos
+        password: nacos
+        register-enabled: true
+        ip: ${GATEWAY_IP:}
+        port: ${server.port}
+        weight: 1.0
+        metadata:
+          version: 1.0.0
+          zone: ${ZONE:default}
+
+  # Redis 配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:123456}
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # 跨域配置
+  webflux:
+    cors:
+      allowed-origins: "*"
+      allowed-methods: "*"
+      allowed-headers: "*"
+      allow-credentials: true
+      max-age: 3600
+
+# 网关配置
+ggl:
+  gateway:
+    # 鉴权配置
+    auth:
+      enabled: true
+      exclude-paths:
+        - /api/auth/login
+        - /api/auth/register
+        - /v3/api-docs/**
+        - /doc.html
+        - /webjars/**
+        - /swagger-resources/**
+        - /favicon.ico
+
+    # 限流配置
+    rate-limit:
+      enabled: true
+      default-rate: 10
+      default-capacity: 20
+
+    # 熔断配置
+    circuit-breaker:
+      enabled: true
+      default-fallback-uri: forward:/fallback
+      default-timeout: 5000
+
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
+    org.springframework.cloud.gateway.handler.FilteringWebHandler: INFO
+    reactor.netty.http.client: WARN

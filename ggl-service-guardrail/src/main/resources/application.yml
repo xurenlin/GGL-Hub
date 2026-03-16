@@ -5,7 +5,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:123456}
       database: 5
       timeout: 3000ms
       lettuce:
@@ -22,6 +22,8 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
         namespace: ${NACOS_NAMESPACE:}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: nacos
+        password: nacos
         register-enabled: true
         ip: ${GUARDRAIL_SERVICE_IP:}
         port: ${server.port}
@@ -122,6 +124,8 @@ sensitive:
     ignore-chinese-style: true
     ignore-english-style: true
     ignore-repeat: true
+    
+    # 数据格式检查
     enable-num-check: true
     enable-email-check: true
     enable-url-check: true
@@ -134,6 +138,8 @@ sensitive:
     enable-time-check: true
     enable-money-check: true
     enable-car-number-check: true
+    
+    # 名称检查
     enable-chinese-name-check: true
     enable-english-name-check: true
     enable-company-name-check: true
@@ -142,7 +148,6 @@ sensitive:
     enable-trade-name-check: true
     enable-organization-name-check: true
     enable-government-name-check: true
-    enable-military-name-check: true
     enable-political-name-check: true
     enable-religious-name-check: true
     enable-ethnic-name-check: true
@@ -161,15 +166,21 @@ sensitive:
     enable-clothing-name-check: true
     enable-accessory-name-check: true
     enable-cosmetic-name-check: true
+    
+    # 医疗健康
     enable-medicine-name-check: true
     enable-health-name-check: true
     enable-beauty-name-check: true
     enable-fitness-name-check: true
+    
+    # 旅行休闲
     enable-travel-name-check: true
     enable-hotel-name-check: true
     enable-restaurant-name-check: true
     enable-shopping-name-check: true
     enable-entertainment-name-check: true
+    
+    # 教育科技
     enable-education-name-check: true
     enable-science-name-check: true
     enable-technology-name-check: true
@@ -180,10 +191,14 @@ sensitive:
     enable-appliance-name-check: true
     enable-furniture-name-check: true
     enable-decoration-name-check: true
+    
+    # 交通建设
     enable-vehicle-name-check: true
     enable-transportation-name-check: true
     enable-construction-name-check: true
     enable-real-estate-name-check: true
+    
+    # 金融保险
     enable-finance-name-check: true
     enable-insurance-name-check: true
     enable-investment-name-check: true
@@ -200,12 +215,16 @@ sensitive:
     enable-tax-name-check: true
     enable-accounting-name-check: true
     enable-audit-name-check: true
+    
+    # 法律军事
     enable-legal-name-check: true
     enable-law-name-check: true
     enable-court-name-check: true
     enable-police-name-check: true
     enable-military-name-check: true
     enable-weapon-name-check: true
+    
+    # 危险物品
     enable-explosive-name-check: true
     enable-drug-name-check: true
     enable-poison-name-check: true
@@ -215,10 +234,14 @@ sensitive:
     enable-biological-name-check: true
     enable-chemical-name-check: true
     enable-nuclear-name-check: true
+    
+    # 环境保护
     enable-environmental-name-check: true
     enable-pollution-name-check: true
     enable-waste-name-check: true
     enable-recycling-name-check: true
+    
+    # 能源资源
     enable-energy-name-check: true
     enable-power-name-check: true
     enable-oil-name-check: true
@@ -227,6 +250,8 @@ sensitive:
     enable-mineral-name-check: true
     enable-metal-name-check: true
     enable-nonmetal-name-check: true
+    
+    # 农林牧渔
     enable-agriculture-name-check: true
     enable-farming-name-check: true
     enable-fishing-name-check: true
@@ -234,23 +259,11 @@ sensitive:
     enable-animal-name-check: true
     enable-plant-name-check: true
     enable-crop-name-check: true
-    enable-food-name-check: true
     enable-beverage-name-check: true
     enable-tobacco-name-check: true
     enable-alcohol-name-check: true
-    enable-drug-name-check: true
-    enable-medicine-name-check: true
-    enable-health-name-check: true
-    enable-beauty-name-check: true
-    enable-fitness-name-check: true
-    enable-sports-name-check: true
-    enable-entertainment-name-check: true
-    enable-art-name-check: true
-    enable-music-name-check: true
-    enable-movie-name-check: true
-    enable-tv-name-check: true
-    enable-game-name-check: true
-    enable-literature-name-check: true
+    
+    # 媒体传播
     enable-news-name-check: true
     enable-media-name-check: true
     enable-publishing-name-check: true
@@ -261,4 +274,4 @@ sensitive:
     enable-exhibition-name-check: true
     enable-conference-name-check: true
     enable-seminar-name-check: true
-    enable-training-name-check:
+    enable-training-name-check: true
