@@ -4,23 +4,23 @@ spring:
     name: ggl-ai-gateway
   profiles:
     active: dev
+  
+  # 使用 import 方式导入 Nacos 配置
   config:
     import:
-      - optional:nacos:${spring.application.name}.yaml?refreshEnabled=true
+      - optional:nacos:${spring.application.name}.yaml?group=DEFAULT_GROUP&refreshEnabled=true
       - optional:nacos:common.yaml?group=DEFAULT_GROUP&refreshEnabled=true
       - optional:nacos:redis.yaml?group=DEFAULT_GROUP&refreshEnabled=true
       - optional:nacos:ai.yaml?group=DEFAULT_GROUP&refreshEnabled=true
 
-  # Nacos 配置中心
+  # 只需要配置 Nacos 服务器地址（不需要 config 节点）
   cloud:
     nacos:
+      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      username: nacos
+      password: nacos
       config:
-        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-        namespace: ${NACOS_NAMESPACE:}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-        file-extension: yaml
-        prefix: ${spring.application.name}
-        refresh-enabled: true
+        enabled: true  # 启用配置中心
 
   # 日志配置
   logging:
