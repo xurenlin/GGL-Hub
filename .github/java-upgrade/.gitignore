@@ -1,0 +1,17 @@
+# 忽略所有 target 目录
+**/target/
+**/target/**
+*.jar
+*.war
+*.ear
+
+# 忽略 IDE 文件
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# 忽略日志
+*.log
+logs/

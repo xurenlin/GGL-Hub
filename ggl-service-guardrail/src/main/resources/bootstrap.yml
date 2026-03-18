@@ -1,0 +1,46 @@
+# Spring Boot 配置
+spring:
+  application:
+    name: ggl-service-guardrail
+  profiles:
+    active: dev
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml?refreshEnabled=true
+      - optional:nacos:common.yaml?group=DEFAULT_GROUP&refreshEnabled=true
+      - optional:nacos:redis.yaml?group=DEFAULT_GROUP&refreshEnabled=true
+      - optional:nacos:ai.yaml?group=DEFAULT_GROUP&refreshEnabled=true
+
+  # Nacos 配置中心
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yaml
+        prefix: ${spring.application.name}
+        refresh-enabled: true
+
+  # 日志配置
+  logging:
+    level:
+      com.ggl: debug
+      dev.langchain4j: debug
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+      file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# 服务端口
+server:
+  port: 8085
+
+# 管理端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

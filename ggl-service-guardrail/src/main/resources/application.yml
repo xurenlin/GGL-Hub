@@ -1,0 +1,277 @@
+# 服务配置
+spring:
+  # Redis 配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:123456}
+      database: 5
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # Nacos 服务发现
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: nacos
+        password: nacos
+        register-enabled: true
+        ip: ${GUARDRAIL_SERVICE_IP:}
+        port: ${server.port}
+        weight: 1.0
+        metadata:
+          version: 1.0.0
+          zone: ${ZONE:default}
+
+# AI 安全防护服务配置
+ggl:
+  service:
+    guardrail:
+      # 内容审核配置
+      content-moderation:
+        # 审核级别
+        moderation-level: STRICT
+        # 支持的审核级别
+        supported-levels: STRICT,MODERATE,PERMISSIVE
+        # 敏感词检测
+        sensitive-word-check: true
+        # 正则表达式检测
+        regex-check: true
+        # AI 模型检测
+        ai-model-check: true
+        # 缓存时间（秒）
+        cache-ttl: 3600
+      
+      # Prompt 注入防护配置
+      prompt-injection:
+        # 防护级别
+        protection-level: HIGH
+        # 支持的防护级别
+        supported-levels: HIGH,MEDIUM,LOW
+        # 关键词检测
+        keyword-detection: true
+        # 语义检测
+        semantic-detection: true
+        # 相似度检测
+        similarity-detection: true
+        # 相似度阈值
+        similarity-threshold: 0.8
+        # 最大检测长度
+        max-detection-length: 1000
+      
+      # AI 输出评测配置
+      ai-evaluation:
+        # 评测维度
+        evaluation-dimensions: ACCURACY,RELEVANCE,SAFETY,COHERENCE
+        # 默认评测模型
+        default-model: GPT_4
+        # 支持的评测模型
+        supported-models: GPT_4,GPT_3_5_TURBO,CLAUDE_3
+        # 评测阈值
+        evaluation-threshold: 0.7
+        # 自动评测
+        auto-evaluation: true
+        # 评测缓存时间（秒）
+        evaluation-cache-ttl: 86400
+      
+      # 安全策略配置
+      security-policy:
+        # 默认策略
+        default-policy: DEFAULT
+        # 支持的策略
+        supported-policies: DEFAULT,STRICT,PERMISSIVE,CUSTOM
+        # 策略缓存时间（秒）
+        policy-cache-ttl: 3600
+        # 策略热加载
+        policy-hot-reload: true
+      
+      # 监控配置
+      monitoring:
+        # 监控开关
+        enabled: true
+        # 监控指标
+        metrics: REQUEST_COUNT,BLOCK_COUNT,AVG_RESPONSE_TIME,ERROR_RATE
+        # 监控数据保留时间（天）
+        retention-days: 30
+        # 告警阈值
+        alert-threshold: 0.1
+
+# LangChain4j 配置
+langchain4j:
+  open-ai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    timeout: 60s
+    log-requests: true
+    log-responses: true
+
+# 敏感词配置
+sensitive:
+  word:
+    enable: true
+    ignore-case: true
+    ignore-width: true
+    ignore-num-style: true
+    ignore-chinese-style: true
+    ignore-english-style: true
+    ignore-repeat: true
+    
+    # 数据格式检查
+    enable-num-check: true
+    enable-email-check: true
+    enable-url-check: true
+    enable-ip-check: true
+    enable-phone-check: true
+    enable-id-card-check: true
+    enable-bank-card-check: true
+    enable-address-check: true
+    enable-date-check: true
+    enable-time-check: true
+    enable-money-check: true
+    enable-car-number-check: true
+    
+    # 名称检查
+    enable-chinese-name-check: true
+    enable-english-name-check: true
+    enable-company-name-check: true
+    enable-product-name-check: true
+    enable-brand-name-check: true
+    enable-trade-name-check: true
+    enable-organization-name-check: true
+    enable-government-name-check: true
+    enable-political-name-check: true
+    enable-religious-name-check: true
+    enable-ethnic-name-check: true
+    enable-regional-name-check: true
+    enable-historical-name-check: true
+    enable-cultural-name-check: true
+    enable-art-name-check: true
+    enable-literature-name-check: true
+    enable-music-name-check: true
+    enable-movie-name-check: true
+    enable-tv-name-check: true
+    enable-game-name-check: true
+    enable-sports-name-check: true
+    enable-food-name-check: true
+    enable-drink-name-check: true
+    enable-clothing-name-check: true
+    enable-accessory-name-check: true
+    enable-cosmetic-name-check: true
+    
+    # 医疗健康
+    enable-medicine-name-check: true
+    enable-health-name-check: true
+    enable-beauty-name-check: true
+    enable-fitness-name-check: true
+    
+    # 旅行休闲
+    enable-travel-name-check: true
+    enable-hotel-name-check: true
+    enable-restaurant-name-check: true
+    enable-shopping-name-check: true
+    enable-entertainment-name-check: true
+    
+    # 教育科技
+    enable-education-name-check: true
+    enable-science-name-check: true
+    enable-technology-name-check: true
+    enable-internet-name-check: true
+    enable-software-name-check: true
+    enable-hardware-name-check: true
+    enable-electronics-name-check: true
+    enable-appliance-name-check: true
+    enable-furniture-name-check: true
+    enable-decoration-name-check: true
+    
+    # 交通建设
+    enable-vehicle-name-check: true
+    enable-transportation-name-check: true
+    enable-construction-name-check: true
+    enable-real-estate-name-check: true
+    
+    # 金融保险
+    enable-finance-name-check: true
+    enable-insurance-name-check: true
+    enable-investment-name-check: true
+    enable-stock-name-check: true
+    enable-fund-name-check: true
+    enable-bond-name-check: true
+    enable-futures-name-check: true
+    enable-forex-name-check: true
+    enable-crypto-name-check: true
+    enable-bank-name-check: true
+    enable-credit-card-name-check: true
+    enable-loan-name-check: true
+    enable-mortgage-name-check: true
+    enable-tax-name-check: true
+    enable-accounting-name-check: true
+    enable-audit-name-check: true
+    
+    # 法律军事
+    enable-legal-name-check: true
+    enable-law-name-check: true
+    enable-court-name-check: true
+    enable-police-name-check: true
+    enable-military-name-check: true
+    enable-weapon-name-check: true
+    
+    # 危险物品
+    enable-explosive-name-check: true
+    enable-drug-name-check: true
+    enable-poison-name-check: true
+    enable-toxic-name-check: true
+    enable-hazardous-name-check: true
+    enable-radioactive-name-check: true
+    enable-biological-name-check: true
+    enable-chemical-name-check: true
+    enable-nuclear-name-check: true
+    
+    # 环境保护
+    enable-environmental-name-check: true
+    enable-pollution-name-check: true
+    enable-waste-name-check: true
+    enable-recycling-name-check: true
+    
+    # 能源资源
+    enable-energy-name-check: true
+    enable-power-name-check: true
+    enable-oil-name-check: true
+    enable-gas-name-check: true
+    enable-coal-name-check: true
+    enable-mineral-name-check: true
+    enable-metal-name-check: true
+    enable-nonmetal-name-check: true
+    
+    # 农林牧渔
+    enable-agriculture-name-check: true
+    enable-farming-name-check: true
+    enable-fishing-name-check: true
+    enable-forestry-name-check: true
+    enable-animal-name-check: true
+    enable-plant-name-check: true
+    enable-crop-name-check: true
+    enable-beverage-name-check: true
+    enable-tobacco-name-check: true
+    enable-alcohol-name-check: true
+    
+    # 媒体传播
+    enable-news-name-check: true
+    enable-media-name-check: true
+    enable-publishing-name-check: true
+    enable-advertising-name-check: true
+    enable-marketing-name-check: true
+    enable-pr-name-check: true
+    enable-event-name-check: true
+    enable-exhibition-name-check: true
+    enable-conference-name-check: true
+    enable-seminar-name-check: true
+    enable-training-name-check: true
