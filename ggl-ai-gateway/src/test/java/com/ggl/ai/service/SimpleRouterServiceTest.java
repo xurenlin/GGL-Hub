@@ -22,7 +22,6 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -47,10 +46,6 @@ public class SimpleRouterServiceTest {
         Field modelField = SimpleRouterService.class.getDeclaredField("model");
         modelField.setAccessible(true);
         modelField.set(service, mockModel);
-
-        // 设置 systemPrompt（如果通过 @Value 注入）
-        ReflectionTestUtils.setField(service, "systemPrompt",
-                "你是一个物流AI助手，请分析用户查询并返回路由指令（ORDER/GEO/OTHER）");
     }
 
     @Nested

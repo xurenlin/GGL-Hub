@@ -24,8 +24,16 @@ public class SimpleRouterService {
         // 使用默认配置，实际项目中应该从配置中心获取
         this.model = OpenAiChatModel.builder()
                 .apiKey("sk-c8f06ccc9c9c40ee805ace8971fc1379")
-                .baseUrl("https://api.openai.com/v1")
+                .baseUrl("https://api.deepseek.com")
+                .modelName("deepseek-chat")
                 .build();
+    }
+
+    public String getCurrentPrompt() {
+        if (systemPrompt == null || systemPrompt.isEmpty()) {
+            return "使用默认提示词 (配置为空)";
+        }
+        return "使用配置的提示词: " + systemPrompt.substring(0, Math.min(20, systemPrompt.length())) + "...";
     }
 
     public String routeAndExecute(String userQuery) {
