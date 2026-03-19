@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/config")
+@RequestMapping("/ai")
 @RefreshScope
 public class ConfigCheckController {
 
