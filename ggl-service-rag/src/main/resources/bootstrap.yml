@@ -56,7 +56,7 @@ spring:
 
 # 服务端口
 server:
-  port: 8084
+  port: 9804
 
 # 管理端点
 management:

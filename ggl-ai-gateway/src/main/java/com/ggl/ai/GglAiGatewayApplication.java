@@ -10,6 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  *
  * @author GGL-Hub
  */
+
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "com.ggl.ai.feign")

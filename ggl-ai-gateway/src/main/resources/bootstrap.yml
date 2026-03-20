@@ -13,14 +13,27 @@ spring:
       - optional:nacos:redis.yaml?group=DEFAULT_GROUP&refreshEnabled=true
       - optional:nacos:ai.yaml?group=DEFAULT_GROUP&refreshEnabled=true
 
-  # 只需要配置 Nacos 服务器地址（不需要 config 节点）
+  # Nacos 配置
   cloud:
     nacos:
-      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-      username: nacos
-      password: nacos
+      # 服务发现配置
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: nacos
+        password: nacos
+        register-enabled: true
+      # 配置中心配置
       config:
-        enabled: true  # 启用配置中心
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yaml
+        prefix: ${spring.application.name}
+        refresh-enabled: true
+        username: nacos
+        password: nacos
 
   # 日志配置
   logging:
@@ -33,7 +46,7 @@ spring:
 
 # 服务端口
 server:
-  port: 8086
+  port: 9806
 
 # 管理端点
 management:

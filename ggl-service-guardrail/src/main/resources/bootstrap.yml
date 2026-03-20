@@ -33,7 +33,7 @@ spring:
 
 # 服务端口
 server:
-  port: 8085
+  port: 9805
 
 # 管理端点
 management:

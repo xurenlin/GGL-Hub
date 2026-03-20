@@ -16,10 +16,16 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 5173,
     proxy: {
       '/ai': {
         target: 'http://localhost:9806',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
+      },
+      '^/ggl-.*': {
+        target: 'http://localhost:9800',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path

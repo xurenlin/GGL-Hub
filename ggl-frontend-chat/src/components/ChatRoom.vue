@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUpdated } from 'vue'
+import { ref, nextTick, onMounted, onUpdated } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   ChatLineRound,
@@ -217,6 +217,7 @@ onUpdated(() => {
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
 }
 
 .chat-header {
@@ -226,6 +227,7 @@ onUpdated(() => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .chat-header h2 {
@@ -248,6 +250,7 @@ onUpdated(() => {
   margin: 0 auto;
   width: 100%;
   padding: 20px;
+  min-height: 0; /* 重要：允许flex子元素收缩 */
 }
 
 .message-list {
@@ -258,6 +261,7 @@ onUpdated(() => {
   border-radius: 12px;
   margin-bottom: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  min-height: 0; /* 重要：允许滚动 */
 }
 
 .empty-state {
