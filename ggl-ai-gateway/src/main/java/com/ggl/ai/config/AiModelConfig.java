@@ -1,10 +1,11 @@
 package com.ggl.ai.config;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 
 @Configuration
 public class AiModelConfig {
@@ -24,6 +25,7 @@ public class AiModelConfig {
         return OpenAiChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
+                .modelName("deepseek-chat")
                 .logRequests(true) // 开启日志，你能在控制台看到 AI 的思考过程
                 .logResponses(true)
                 .build();

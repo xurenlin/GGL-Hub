@@ -18,7 +18,7 @@ public class OrderLogisticsTool {
     }
 
     @Tool("根据订单号查询物流状态、当前位置和预计送达时间")
-    public String getOrderDetails(@P("订单号，通常是8位数字") String orderId) {
+    public String getOrderDetails(@P("订单号，通常是4-8位数字") String orderId) {
 
         System.out.println("--- [AI Agent 发起远程 Feign 调用] ---");
 
