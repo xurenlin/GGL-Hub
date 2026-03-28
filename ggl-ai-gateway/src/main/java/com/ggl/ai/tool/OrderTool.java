@@ -8,12 +8,12 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 
 @Component
-public class OrderLogisticsTool {
+public class OrderTool {
 
     private final OrderServiceClient orderServiceClient;
 
     // 构造红注入 Feign 客户端
-    public OrderLogisticsTool(OrderServiceClient orderServiceClient) {
+    public OrderTool(OrderServiceClient orderServiceClient) {
         this.orderServiceClient = orderServiceClient;
     }
 

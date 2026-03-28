@@ -1,257 +1,171 @@
-version: '3.8'
+version: '3.8' # Docker Compose 文件版本，3.8 兼容性好，支持大多数现代功能
 
 services:
-  # Nacos 注册中心 & 配置中心
+  # =================================================================
+  # 1. 核心基础设施 (MySQL & Nacos)
+  # =================================================================
+
+  mysql:
+    image: mysql:8.0 # 使用 MySQL 8.0 官方镜像
+    container_name: ggl-mysql # 容器在 Docker 里的显示名称
+    environment:
+      # 环境变量配置
+      - MYSQL_ROOT_PASSWORD=123456 # 设置数据库 root 用户的密码
+      - MYSQL_DATABASE=nacos # 启动时自动创建一个名为 nacos 的数据库
+      - TZ=Asia/Shanghai # 设置容器时区为上海，保证日志时间正确
+    ports:
+      - "3307:3306" # 端口映射：[宿主机端口]:[容器内端口]。你用 3307 访问，它转发到容器的 3306
+    volumes:
+      # 数据持久化挂载
+      - ./volumes/mysql_data:/var/lib/mysql # 将数据库文件存到宿主机，防止容器删了数据丢失
+      - ./init-scripts:/docker-entrypoint-initdb.d # 自动执行该目录下的 .sql 脚本进行初始化
+    command:
+      # 启动指令补充
+      - --character-set-server=utf8mb4 # 设置服务器字符集为 utf8mb4（支持表情符号）
+      - --collation-server=utf8mb4_unicode_ci # 设置排序规则
+      - --default-authentication-plugin=mysql_native_password # 兼容旧版客户端的登录方式
+    networks:
+      - ggl-network # 加入自定义网络，方便容器间通过名字互相访问
+    healthcheck:
+      # 健康检查：确保 MySQL 真正启动成功，而不只是进程存在
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ] # 运行 ping 指令测试
+      interval: 10s # 每 10 秒检查一次
+      retries: 5 # 连续失败 5 次认为不健康
+    restart: unless-stopped # 除非手动停止，否则挂了总是自动重启
+
   nacos:
     image: nacos/nacos-server:v2.3.0
     container_name: ggl-nacos
     environment:
-      - MODE=standalone
-      - SPRING_DATASOURCE_PLATFORM=mysql
-      - MYSQL_SERVICE_HOST=mysql
+      - MODE=standalone # 运行模式：standalone 为单机版，cluster 为集群版
+      - SPRING_DATASOURCE_PLATFORM=mysql # 告诉 Nacos 使用 MySQL 作为持久化存储
+      - MYSQL_SERVICE_HOST=mysql # MySQL 的主机名，直接写上面定义的容器名 mysql
       - MYSQL_SERVICE_PORT=3306
       - MYSQL_SERVICE_DB_NAME=nacos
       - MYSQL_SERVICE_USER=root
       - MYSQL_SERVICE_PASSWORD=123456
-      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_ENABLE=true # 开启鉴权功能（登录需要用户名密码）
+      # 下面是 Nacos 2.x 必需的密钥配置（长度必须大于 32 位）
       - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
-      - NACOS_AUTH_IDENTITY_KEY=serverIdentity
-      - NACOS_AUTH_IDENTITY_VALUE=security
+      - NACOS_AUTH_IDENTITY_KEY=server.identity
+      - NACOS_AUTH_IDENTITY_VALUE=ggl-nacos-server
     ports:
-      - "8848:8848"
-      - "9848:9848"
-      - "9849:9849"
+      - "8848:8848" # Nacos 控制台端口
+      - "9848:9848" # Nacos 2.x 客户端 gRPC 注册端口（必须开放）
     volumes:
-      - nacos_logs:/home/nacos/logs
-      - nacos_data:/home/nacos/data
+      - ./volumes/nacos/logs:/home/nacos/logs
     networks:
       - ggl-network
     depends_on:
-      - mysql
+      # 依赖顺序控制
+      mysql:
+        condition: service_healthy # 必须等 mysql 健康检查通过后，再启动 nacos
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos/" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # MySQL 数据库
-  mysql:
-    image: mysql:8.0
-    container_name: ggl-mysql
+  # =================================================================
+  # 2. AI 向量数据库 (Milvus 体系)
+  # =================================================================
+
+  etcd:
+    # Milvus 的元数据管理中心（类似 Nacos 对微服务的作用）
+    container_name: ggl-milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.0
     environment:
-      - MYSQL_ROOT_PASSWORD=123456
-      - MYSQL_DATABASE=nacos
-      - TZ=Asia/Shanghai
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max_connections=1000
-      - --init-file=/docker-entrypoint-initdb.d/init-all.sh
+      - ETCD_AUTO_COMPACTION_RETENTION=5 # 自动压缩历史记录，防止磁盘占满
+    command: etcd -advertise-client-urls http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     networks:
       - ggl-network
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Redis 缓存
+  minio:
+    # 对象存储（存文件，也存 Milvus 的向量索引数据）
+    image: minio/minio:latest
+    container_name: ggl-minio
+    ports:
+      - "9002:9000" # API 服务端口
+      - "9003:9001" # 管理后台端口
+    environment:
+      - MINIO_ROOT_USER=minioadmin # 默认账号
+      - MINIO_ROOT_PASSWORD=minioadmin # 默认密码
+    volumes:
+      - ./volumes/minio_data:/data
+    command: server /data --console-address ":9001" # 启动服务端并开启后台
+    networks:
+      - ggl-network
+
+  milvus:
+    # 核心向量引擎
+    container_name: ggl-milvus-standalone
+    image: milvusdb/milvus:v2.3.15
+    command: [ "milvus", "run", "standalone" ] # 以单机模式运行
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379 # 告诉 milvus 去哪找 etcd
+      - MINIO_ADDRESS=minio:9000 # 告诉 milvus 去哪找 minio
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+    ports:
+      - "19530:19530" # Java SDK (gRPC) 连接此端口进行向量检索
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - ggl-network
+
+  attu:
+    # Milvus 的可视化管理界面
+    container_name: ggl-milvus-attu
+    image: zilliz/attu:latest
+    environment:
+      - MILVUS_URL=milvus:19530 # 默认连接地址
+    ports:
+      - "8000:3000" # 浏览器访问 http://localhost:8000
+    networks:
+      - ggl-network
+
+  # =================================================================
+  # 3. 运维与可观测性 (Redis & ELK & Monitoring)
+  # =================================================================
+
   redis:
     image: redis:7.0-alpine
     container_name: ggl-redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes --requirepass 123456
+    command: redis-server --appendonly yes --requirepass 123456 # 开启 AOF 持久化并设置密码
     networks:
       - ggl-network
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # RedisInsight (Redis 管理界面) - 可选
-  redisinsight:
-    image: redislabs/redisinsight:latest
-    container_name: ggl-redisinsight
-    ports:
-      - "5540:5540"
-    volumes:
-      - redisinsight_data:/db
-    networks:
-      - ggl-network
-    restart: unless-stopped
-
-  # Nginx 反向代理 (可选)
-  nginx:
-    image: nginx:alpine
-    container_name: ggl-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/ssl:/etc/nginx/ssl
-      - ./nginx/html:/usr/share/nginx/html
-    networks:
-      - ggl-network
-    depends_on:
-      - nacos
-    restart: unless-stopped
-
-  # Portainer (Docker 管理界面) - 可选
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: ggl-portainer
-    ports:
-      - "9000:9000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    networks:
-      - ggl-network
-    restart: unless-stopped
-
-  # Prometheus (监控) - 可选
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: ggl-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    networks:
-      - ggl-network
-    restart: unless-stopped
-
-  # Grafana (监控面板) - 可选
-  grafana:
-    image: grafana/grafana:latest
-    container_name: ggl-grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-    networks:
-      - ggl-network
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-
-  # Jaeger (分布式追踪) - 可选
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: ggl-jaeger
-    ports:
-      - "16686:16686"
-      - "14268:14268"
-      - "14250:14250"
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-    networks:
-      - ggl-network
-    restart: unless-stopped
-
-  # MinIO (对象存储) - 可选
-  minio:
-    image: minio/minio:latest
-    container_name: ggl-minio
-    ports:
-      - "9002:9000" # API 端口改为 9002
-      - "9003:9001" # Console 端口改为 9003
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-    networks:
-      - ggl-network
-    restart: unless-stopped
-
-  # Elasticsearch (日志存储) - 可选
   elasticsearch:
     image: elasticsearch:8.12.0
     container_name: ggl-elasticsearch
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node # 单节点模式运行，不组建集群
+      - xpack.security.enabled=false # 学习环境关闭安全限制，方便连接
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # 限制 JVM 内存，防止撑爆电脑
     ports:
       - "9200:9200"
-      - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - ggl-network
-    restart: unless-stopped
 
-  # Logstash (日志收集) - 可选
-  logstash:
-    image: logstash:8.12.0
-    container_name: ggl-logstash
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
-      - ./logstash/config:/usr/share/logstash/config
+  jaeger:
+    # 分布式链路追踪：看你的 AI Agent 调微服务到底卡在哪一环
+    image: jaegertracing/all-in-one:latest
+    container_name: ggl-jaeger
     ports:
-      - "5000:5000"
+      - "16686:16686" # UI 界面：http://localhost:16686
     networks:
       - ggl-network
-    depends_on:
-      - elasticsearch
-    restart: unless-stopped
 
-  # Kibana (日志可视化) - 可选
-  kibana:
-    image: kibana:8.12.0
-    container_name: ggl-kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    networks:
-      - ggl-network
-    depends_on:
-      - elasticsearch
-    restart: unless-stopped
-
-volumes:
-  nacos_logs:
-  nacos_data:
-  mysql_data:
-  redis_data:
-  redisinsight_data:
-  portainer_data:
-  prometheus_data:
-  grafana_data:
-  minio_data:
-  elasticsearch_data:
-
+# =================================================================
+# 网络与存储卷定义
+# =================================================================
 
 networks:
   ggl-network:
+    # 定义一个桥接网络
     driver: bridge
-    name: ggl-network
+    name: ggl-network # 这样所有容器都可以通过“服务名”互相 ping 通
+
+volumes:
+  # 命名卷定义，让 Docker 自动管理磁盘空间
+  mysql_data:
+  minio_data:

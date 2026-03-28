@@ -93,3 +93,7 @@ venv/
 **/failsafe-reports/
 **/coverage/
 .coverage
+
+volumes/mysql_data/*
+volumes/minio_data/*
+**/logs/*
