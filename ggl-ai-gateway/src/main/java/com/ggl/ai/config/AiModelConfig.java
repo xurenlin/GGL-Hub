@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 
 @Configuration
@@ -28,6 +30,19 @@ public class AiModelConfig {
                 .modelName("deepseek-chat")
                 .logRequests(true) // 开启日志，你能在控制台看到 AI 的思考过程
                 .logResponses(true)
+                .build();
+    }
+
+    /**
+     * 定义 Embedding 模型 Bean
+     * 负责将文档片段转换为向量
+     */
+    @Bean
+    public EmbeddingModel embeddingModel() {
+        // 使用 OpenAi 兼容接口来调用 DeepSeek 或其他平台的 Embedding 服务
+        return OllamaEmbeddingModel.builder()
+                .baseUrl("http://localhost:11434")
+                .modelName("bge-m3") // 确认你使用的模型名称，需支持 1024 维输出
                 .build();
     }
 }

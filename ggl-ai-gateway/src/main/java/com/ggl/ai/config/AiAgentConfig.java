@@ -32,7 +32,9 @@ public class AiAgentConfig {
                                 .port(19530)
                                 .collectionName("ggl_knowledge_base")
                                 .dimension(1024) // 必须与你 Attu 创建时一致
+                                .metricType(io.milvus.param.MetricType.IP)
                                 .build();
+
         }
 
         // 2. 定义内容检索器 (RAG 的核心组件)
